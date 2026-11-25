@@ -40,6 +40,18 @@ if (back.trim().length === 0) {
   throw new Error("entry is only whitespace");
 }
 
+// Byte-exactness guard: the file must hold exactly the entry's UTF-8
+// bytes — no BOM, no trailing newline, no encoding surprise.
+const expectedBytes = Buffer.byteLength(ENTRY, "utf8");
+const { statSync } = await import("node:fs");
+if (statSync(outPath).size !== expectedBytes) {
+  throw new Error(
+    `entry.txt is ${statSync(outPath).size} bytes, expected ${expectedBytes}`,
+  );
+}
+
 // Self-verifying run: print the sha256 so repeated runs can be compared.
 const sha256 = createHash("sha256").update(back, "utf8").digest("hex");
-console.log(`wrote ${outPath} (${back.length} characters, sha256 ${sha256})`);
+console.log(
+  `wrote ${outPath} (${back.length} characters, ${ENTRY.split(/\s+/).length} words, sha256 ${sha256})`,
+);
